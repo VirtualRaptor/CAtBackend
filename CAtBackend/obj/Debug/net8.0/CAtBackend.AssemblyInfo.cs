@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CAtBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4a034797bcce2474015b8e782b90b7a96380fe72")]
 [assembly: System.Reflection.AssemblyProductAttribute("CAtBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CAtBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
