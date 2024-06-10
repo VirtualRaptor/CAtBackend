@@ -1,21 +1,20 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CatApp.Models
 {
     public class Favorite
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = string.Empty;
+        [Key]
+        public int Id { get; set; }
 
-        [BsonElement("userId")]
-        public string UserId { get; set; } = string.Empty;
+        [Required]
+        public int UserId { get; set; }
 
-        [BsonElement("catImageUrl")]
-        public string CatImageUrl { get; set; } = string.Empty;
+        [Required]
+        [StringLength(255)]
+        public string CatImageUrl { get; set; }
 
-        [BsonElement("name")]
-        public string Name { get; set; } = string.Empty;
+        [StringLength(100)]
+        public string Name { get; set; }
     }
 }

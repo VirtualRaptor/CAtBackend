@@ -1,20 +1,20 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using BCrypt.Net;
 
 namespace CatApp.Models
 {
     public class User
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = string.Empty;
+        [Key]
+        public int Id { get; set; }
 
-        [BsonElement("username")]
-        public string Username { get; set; } = string.Empty;
+        [Required]
+        [StringLength(50)]
+        public string Username { get; set; }
 
-        [BsonElement("password")]
-        public string Password { get; set; } = string.Empty;
+        [Required]
+        [StringLength(255)]
+        public string Password { get; set; }
 
         public void HashPassword()
         {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 using System.Security.Claims;
 using CatApp.Models;
-using CatApp.Services;
+using CatApp.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CatApp.Controllers
 {
@@ -11,11 +11,11 @@ namespace CatApp.Controllers
     [Route("api/[controller]")]
     public class FavoritesController : ControllerBase
     {
-        private readonly MongoDBService _mongoDBService;
+        private readonly AppDbContext _context;
 
-        public FavoritesController(MongoDBService mongoDBService)
+        public FavoritesController(AppDbContext context)
         {
-            _mongoDBService = mongoDBService;
+            _context = context;
         }
 
         [HttpPost]
@@ -28,8 +28,9 @@ namespace CatApp.Controllers
                 return BadRequest(new { message = "Favorite is null" });
             }
 
-            favorite.UserId = userId;
-            await _mongoDBService.Favorites.InsertOneAsync(favorite);
+            favorite.UserId = int.Parse(userId);
+            _context.Favorites.Add(favorite);
+            await _context.SaveChangesAsync();
             return Created("", favorite);
         }
 
@@ -37,37 +38,39 @@ namespace CatApp.Controllers
         [Authorize]
         public async Task<IActionResult> GetFavorites()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var favorites = await _mongoDBService.Favorites.Find(f => f.UserId == userId).ToListAsync();
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var favorites = await _context.Favorites.Where(f => f.UserId == userId).ToListAsync();
             return Ok(favorites);
         }
 
         [HttpDelete("{id}")]
         [Authorize]
-        public async Task<IActionResult> RemoveFavorite(string id)
+        public async Task<IActionResult> RemoveFavorite(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _mongoDBService.Favorites.DeleteOneAsync(f => f.Id == id && f.UserId == userId);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var favorite = await _context.Favorites.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
-            if (result.DeletedCount == 0)
+            if (favorite == null)
             {
                 return NotFound(new { message = "Favorite not found or not authorized" });
             }
 
+            _context.Favorites.Remove(favorite);
+            await _context.SaveChangesAsync();
             return Ok(new { message = "Favorite removed" });
         }
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<IActionResult> UpdateFavoriteName(string id, [FromBody] Favorite updatedFavorite)
+        public async Task<IActionResult> UpdateFavoriteName(int id, [FromBody] Favorite updatedFavorite)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             if (updatedFavorite == null)
             {
                 return BadRequest(new { message = "Updated favorite is null" });
             }
 
-            var favorite = await _mongoDBService.Favorites.Find(f => f.Id == id && f.UserId == userId).FirstOrDefaultAsync();
+            var favorite = await _context.Favorites.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
             if (favorite == null)
             {
@@ -75,7 +78,7 @@ namespace CatApp.Controllers
             }
 
             favorite.Name = updatedFavorite.Name;
-            await _mongoDBService.Favorites.ReplaceOneAsync(f => f.Id == id, favorite);
+            await _context.SaveChangesAsync();
             return Ok(favorite);
         }
     }

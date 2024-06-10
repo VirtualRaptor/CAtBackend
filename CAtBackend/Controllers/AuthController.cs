@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using CatApp.Models;
-using CatApp.Services;
+using CatApp.Data;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.EntityFrameworkCore;
 
 namespace CatApp.Controllers
 {
@@ -16,12 +16,12 @@ namespace CatApp.Controllers
     [EnableCors("AllowAll")]
     public class AuthController : ControllerBase
     {
-        private readonly MongoDBService _mongoDBService;
+        private readonly AppDbContext _context;
         private readonly IConfiguration _config;
 
-        public AuthController(MongoDBService mongoDBService, IConfiguration config)
+        public AuthController(AppDbContext context, IConfiguration config)
         {
-            _mongoDBService = mongoDBService;
+            _context = context;
             _config = config;
         }
 
@@ -36,11 +36,13 @@ namespace CatApp.Controllers
             user.HashPassword();
             try
             {
-                await _mongoDBService.Users.InsertOneAsync(user);
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
                 var token = GenerateJwtToken(user);
                 return Created("", new { token });
             }
-            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+            catch (DbUpdateException)
             {
                 return BadRequest(new { message = "Username already exists" });
             }
@@ -54,7 +56,7 @@ namespace CatApp.Controllers
                 return BadRequest(new { message = "User is null" });
             }
 
-            var dbUser = await _mongoDBService.Users.Find(u => u.Username == user.Username).FirstOrDefaultAsync();
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username);
 
             if (dbUser == null || !dbUser.VerifyPassword(user.Password))
             {
